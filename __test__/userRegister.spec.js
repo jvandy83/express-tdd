@@ -74,13 +74,23 @@ describe('User Registration', () => {
 		const { validationErrors } = response.body;
 		expect(validationErrors.username).toBe('Username cannot be null');
 	});
-	it('returns Username cannot be null when username is null', async () => {
+	it('returns E-mail cannot be null when email is null', async () => {
 		const response = await request(app).post('/api/1.0/users').send({
-			username: null,
-			email: 'user1mail.com',
+			username: 'user1',
+			email: null,
 			password: 'password',
 		});
 		const { validationErrors } = response.body;
-		expect(validationErrors.username).toBe('Username cannot be null');
+		console.log(response.body);
+		expect(validationErrors.email).toBe('E-mail cannot be null');
+	});
+	it('returns errors for both when username and email is null', async () => {
+		const response = await request(app).post('/api/1.0/users').send({
+			username: null,
+			email: null,
+			password: 'password',
+		});
+		const { validationErrors } = response.body;
+		expect(Object.keys(validationErrors)).toEqual(['username', 'email']);
 	});
 });
