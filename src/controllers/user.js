@@ -2,10 +2,18 @@ import User from '../models/user/User.js';
 
 import argon2 from 'argon2';
 
+import { validationResult } from 'express-validator';
+
 export const createUser = async (req, res) => {
-	if (req.validationErrors) {
-		const response = { validationErrors: { ...req.validationErrors } };
-		return res.status(400).json(response);
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		const validationErrors = {};
+		errors.array().forEach((error) => {
+			validationErrors[error.param] = error.msg;
+		});
+		return res.status(400).json({
+			validationErrors,
+		});
 	}
 	const { username, email, password } = req.body;
 	try {
