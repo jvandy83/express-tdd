@@ -16,16 +16,15 @@ export const createUser = async (req, res) => {
 		});
 	}
 	const { username, email, password } = req.body;
-	try {
-		const hashedPassword = await argon2.hash(password, 10);
-		await User.create({ username, email, password: hashedPassword });
-	} catch (error) {
-		return res.status(500).json({
-			ok: false,
-			message: error.message,
-		});
-	}
+
+	const hashedPassword = await argon2.hash(password, 10);
+	await User.create({ username, email, password: hashedPassword });
+
 	return res.status(200).json({
 		ok: true,
 	});
+};
+
+export const findByEmail = async (email) => {
+	return await User.findOne({ where: { email } });
 };
