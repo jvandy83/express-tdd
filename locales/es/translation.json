@@ -1,0 +1,11 @@
+{
+	"usernameNull": "El nombre de usuario no puede ser nulo",
+	"usernameSize": "Debe tener un mínimo de 4 y un máximo de 32 caracteres",
+	"emailNull": "El correo electrónico no puede ser nulo",
+	"emailInvalid": "El correo no es válido",
+	"passwordNull": "La contraseña no puede ser nula",
+	"passwordMin": "La contraseña debe tener al menos 6 caracteres",
+	"passwordPattern": "La contraseña debe tener al menos 1 mayúscula, 1 letra minúscula y 1 número",
+	"emailInUse": "Correo electrónico en uso",
+	"userCreatedSuccess": "Usuario creado"
+}

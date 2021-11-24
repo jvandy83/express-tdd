@@ -11,33 +11,31 @@ router.post(
 	[
 		check('username')
 			.notEmpty()
-			.withMessage('Username cannot be null')
+			.withMessage('usernameNull')
 			.bail()
 			.isLength({ min: 4, max: 32 })
-			.withMessage('Must have min 4 and max 32 characters'),
+			.withMessage('usernameSize'),
 		check('email')
 			.notEmpty()
-			.withMessage('E-mail cannot be null')
+			.withMessage('emailNull')
 			.bail()
 			.isEmail()
-			.withMessage('E-mail is not valid')
+			.withMessage('emailInvalid')
 			.bail()
 			.custom(async (email) => {
 				const user = await findByEmail(email);
 				if (user) {
-					throw new Error('E-mail in use');
+					throw new Error('emailInUse');
 				}
 			}),
-		check('password', 'Password cannot be null')
+		check('password', 'passwordNull')
 			.notEmpty()
 			.bail()
 			.isLength({ min: 6 })
-			.withMessage('Password must be at least 6 characters')
+			.withMessage('passwordMin')
 			.bail()
 			.matches(/^(?:(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*)$/)
-			.withMessage(
-				'Password must have at least 1 uppercase, 1 lowercase letter and 1 number',
-			),
+			.withMessage('passwordPattern'),
 	],
 	createUser,
 );

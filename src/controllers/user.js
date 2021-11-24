@@ -9,7 +9,7 @@ export const createUser = async (req, res) => {
 	if (!errors.isEmpty()) {
 		const validationErrors = {};
 		errors.array().forEach((error) => {
-			validationErrors[error.param] = error.msg;
+			validationErrors[error.param] = req.t(error.msg);
 		});
 		return res.status(400).json({
 			validationErrors,
@@ -21,7 +21,7 @@ export const createUser = async (req, res) => {
 	await User.create({ username, email, password: hashedPassword });
 
 	return res.status(200).json({
-		ok: true,
+		message: req.t('userCreatedSuccess'),
 	});
 };
 
