@@ -3,7 +3,14 @@ import request from 'supertest';
 import app from '../src/app.js';
 import User from '../src/models/user/User.js';
 
+import { jest } from '@jest/globals';
+
 import sequelize from '../src/config/database.js';
+
+import EmailService from '../src/email/EmailService.js';
+
+import nodemailerStub from 'nodemailer-stub';
+import { send } from 'process';
 
 beforeAll(() => {
 	return sequelize.sync({ force: true });
@@ -38,6 +45,7 @@ describe('User Registration', () => {
 		'Password must have at least 1 uppercase, 1 lowercase letter and 1 number';
 	const emailInUse = 'E-mail in use';
 	const userCreatedSuccess = 'User created';
+	const emailFailure = 'E-mail failure';
 
 	it('returns 200 ok when signup request is valid', async () => {
 		const response = await postUser();
@@ -123,10 +131,7 @@ describe('User Registration', () => {
 			expect(body.validationErrors[field]).toBe(expectedMessage);
 		},
 	);
-	it('returns success message when signup request is valid', async () => {
-		const response = await postUser();
-		expect(response.body.message).toBe(userCreatedSuccess);
-	});
+
 	it('returns E-mail in use when same email is already in use', async () => {
 		await User.create({ ...validUser });
 		const response = await postUser();
@@ -150,10 +155,53 @@ describe('User Registration', () => {
 		expect(savedUser.inactive).toBe(true);
 	});
 	it('creates user in inactive mode even if the request body contains inactive as false', async () => {
-		await postUser();
+		const newUser = { ...validUser, inactive: false };
+		await postUser(newUser);
 		const users = await User.findAll();
 		const savedUser = users[0];
 		expect(savedUser.inactive).toBe(true);
+	});
+	it('creates an activation token for user', async () => {
+		await postUser();
+		const users = await User.findAll();
+		const savedUser = users[0];
+		expect(savedUser.activationToken).toBeTruthy();
+	});
+	it('sends an account activation email with activationToken', async () => {
+		await postUser();
+		const lastMail = nodemailerStub.interactsWithMail.lastMail();
+		expect(lastMail.to[0]).toBe('user1@mail.com');
+		const users = await User.findAll();
+		const savedUser = users[0];
+		expect(lastMail.content).toContain(savedUser.activationToken);
+	});
+	it('returns 502 bad gateway when sending email fails', async () => {
+		const mockFn = jest
+			.spyOn(EmailService, 'sendAccountActivation')
+			// mock error, actual error is sent in controller
+			.mockRejectedValue({ message: 'Failed to deliver email' });
+		const response = await postUser();
+		expect(response.status).toBe(502);
+		mockFn.mockRestore();
+	});
+	it('returns Email failure email when sending email', async () => {
+		const mockFn = jest
+			.spyOn(EmailService, 'sendAccountActivation')
+			// mock error, actual error is sent in controller
+			.mockRejectedValue({ message: 'Failed to deliver email' });
+		const response = await postUser();
+		mockFn.mockRestore();
+		expect(response.body.message).toBe(emailFailure);
+	});
+	it('does not save user to database if activation email fails', async () => {
+		const mockFn = jest
+			.spyOn(EmailService, 'sendAccountActivation')
+			// mock error, actual error is sent in controller
+			.mockRejectedValue({ message: 'Failed to deliver email' });
+		const response = await postUser();
+		mockFn.mockRestore();
+		const users = await User.findAll();
+		expect(users.length).toBe(0);
 	});
 });
 
@@ -168,6 +216,7 @@ describe('Internationalization', () => {
 		'La contraseña debe tener al menos 1 mayúscula, 1 letra minúscula y 1 número';
 	const emailInUse = 'Correo electrónico en uso';
 	const userCreatedSuccess = 'Usuario creado';
+	const emailFailure = 'Error de correo electrónico';
 
 	it.each`
 		field         | value              | expectedMessage
@@ -186,7 +235,7 @@ describe('Internationalization', () => {
 		${'password'} | ${'lowerand6789'}  | ${passwordPattern}
 		${'password'} | ${'UPPERAND6789'}  | ${passwordPattern}
 	`(
-		'returns $expectedMessage when $field is $value when language is set to Espanol',
+		'returns $expectedMessage when $field is $value when language is set to Spanish',
 		async ({ field, expectedMessage, value }) => {
 			const user = {
 				username: 'user1',
@@ -199,7 +248,7 @@ describe('Internationalization', () => {
 			expect(body.validationErrors[field]).toBe(expectedMessage);
 		},
 	);
-	it(`returns ${emailInUse} when same email is already in use when language is set as Espanol`, async () => {
+	it(`returns ${emailInUse} when same email is already in use when language is set as Spanish`, async () => {
 		await User.create({ ...validUser });
 		const response = await postUser({ ...validUser }, { language: 'es' });
 		const { validationErrors } = response.body;
@@ -215,8 +264,17 @@ describe('Internationalization', () => {
 		const { body } = response;
 		expect(Object.keys(body.validationErrors)).toEqual(['username', 'email']);
 	});
-	it(`returns ${userCreatedSuccess} when signup request is valid and language is set to Espanol`, async () => {
+	it(`returns ${userCreatedSuccess} when signup request is valid and language is set to Spanish`, async () => {
 		const response = await postUser({ ...validUser }, { language: 'es' });
 		expect(response.body.message).toBe(userCreatedSuccess);
+	});
+	it(`returns ${emailFailure} email when sending email and language is set to Spanish`, async () => {
+		const mockFn = jest
+			.spyOn(EmailService, 'sendAccountActivation')
+			// mock error, actual error is sent in controller
+			.mockRejectedValue({ message: 'Failed to deliver email' });
+		const response = await postUser({ ...validUser }, { language: 'es' });
+		mockFn.mockRestore();
+		expect(response.body.message).toBe(emailFailure);
 	});
 });

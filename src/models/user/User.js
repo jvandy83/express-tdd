@@ -21,6 +21,7 @@ User.init(
 			type: Sequelize.BOOLEAN,
 			defaultValue: true,
 		},
+		activationToken: Sequelize.STRING,
 	},
 	{ sequelize, modelName: 'user' },
 );

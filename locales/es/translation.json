@@ -7,5 +7,6 @@
 	"passwordMin": "La contraseña debe tener al menos 6 caracteres",
 	"passwordPattern": "La contraseña debe tener al menos 1 mayúscula, 1 letra minúscula y 1 número",
 	"emailInUse": "Correo electrónico en uso",
-	"userCreatedSuccess": "Usuario creado"
+	"userCreatedSuccess": "Usuario creado",
+	"emailFailure": "Error de correo electrónico"
 }
