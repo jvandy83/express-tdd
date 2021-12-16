@@ -74,3 +74,32 @@ export const createUser = async (req, res) => {
 export const findByEmail = async (email) => {
 	return await User.findOne({ where: { email } });
 };
+
+export const activateToken = async (req, res, next) => {
+	const { token } = req.params;
+
+	let user;
+
+	try {
+		user = await User.findOne({ where: { activationToken: token } });
+		if (user) {
+			user.inactive = false;
+
+			user.activationToken = null;
+
+			await user.save();
+
+			return res.status(200).json({
+				message: 'ok',
+			});
+		}
+		return res.status(400).json({
+			message: req.t('accountActivationFailure'),
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).json({
+			message: 'Something went wrong',
+		});
+	}
+};

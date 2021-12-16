@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { createUser, findByEmail } from '../controllers/user.js';
+import { createUser, findByEmail, activateToken } from '../controllers/user.js';
 
 import { check } from 'express-validator';
 
@@ -39,5 +39,7 @@ router.post(
 	],
 	createUser,
 );
+
+router.post('/users/token/:token', activateToken);
 
 export default router;

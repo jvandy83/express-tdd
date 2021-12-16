@@ -290,3 +290,67 @@ describe('Internationalization', () => {
 		expect(response.body.message).toBe(emailFailure);
 	});
 });
+
+describe('Account activation', () => {
+	it('activates the account when correct token is sent', async () => {
+		await postUser();
+		let users = await User.findAll();
+		const token = users[0].activationToken;
+
+		await request(app).post(`/api/1.0/users/token/${token}`).send();
+
+		users = await User.findAll();
+
+		expect(users[0].inactive).toBe(false);
+	});
+	it('removes token from table after successful activation', async () => {
+		await postUser();
+		let users = await User.findAll();
+		const token = users[0].activationToken;
+
+		await request(app).post(`/api/1.0/users/token/${token}`).send();
+
+		users = await User.findAll();
+
+		expect(users[0].activationToken).toBeFalsy();
+	});
+	it('does not activate the account when token is wrong', async () => {
+		await postUser();
+		let users = await User.findAll();
+		const token = users[0].activationToken + 'wrong_token';
+
+		await request(app).post(`/api/1.0/users/token/${token}`).send();
+
+		users = await User.findAll();
+
+		expect(users[0].inactive).toBe(true);
+	});
+	it('does not activate the account when token is wrong', async () => {
+		await postUser();
+		const token = 'token_does_not_exist';
+
+		const response = await request(app)
+			.post(`/api/1.0/users/token/${token}`)
+			.send();
+
+		expect(response.status).toBe(400);
+	});
+	it.each`
+		language | message
+		${'es'}  | ${'Esta cuenta está activa o el token no es válido'}
+		${'en'}  | ${'This account is either active or the token is invalid'}
+	`(
+		'returns $message when wrong token is sent and language is $language',
+		async ({ language, message }) => {
+			await postUser();
+			const token = 'token_does_not_exist';
+
+			const response = await request(app)
+				.post(`/api/1.0/users/token/${token}`)
+				.set('Accept-Language', language)
+				.send();
+
+			expect(response.body.message).toBe(message);
+		},
+	);
+});
