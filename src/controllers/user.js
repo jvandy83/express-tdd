@@ -59,6 +59,7 @@ export const createUser = async (req, res) => {
 		await EmailService.sendAccountActivation(user.activationToken, email);
 		await transaction.commit();
 	} catch (error) {
+		console.log(error.message);
 		transaction.rollback();
 		return res.status(502).json({
 			message: req.t('emailFailure'),
